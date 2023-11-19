@@ -126,4 +126,11 @@ public class Product {
     public void setImage(String image) {
         this.image = image;
     }
+
+    public String info() {
+        return "Наименование: " + productName + "\n" +
+                "Описание: " + description + "\n" +
+                "Производитель: " + supplier + "\n" +
+                "Цена: " + cost + "\n";
+    }
 }

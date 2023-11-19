@@ -1,17 +1,30 @@
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.math.BigDecimal;
+import java.util.List;
 
 public class MainApplicationFrame extends JFrame {
     private User user;
+    private DefaultListModel<String> productListModel;
+    private JList<String> productList;
+    private JLabel statusLabel;
+
+    private void initComponents() {
+        productListModel = new DefaultListModel<String>();
+        productList = new JList<>(productListModel);
+        statusLabel = new JLabel();
+
+    }
 
     public MainApplicationFrame(User user) {
         this.user = user;
-
+        initComponents();
         setTitle("Main Application");
-        setSize(600, 400);
+        setSize(300, 200);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // Вывод ФИО пользователя в правом верхнем углу
@@ -54,6 +67,7 @@ public class MainApplicationFrame extends JFrame {
             add(addButton);
             add(editButton);
             add(deleteButton);
+
         } else {
             // Если пользователь - клиент или менеджер
             JButton viewProductsButton = new JButton("Показать товары");
@@ -62,8 +76,59 @@ public class MainApplicationFrame extends JFrame {
             viewProductsButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    // Логика просмотра товаров
-                    JOptionPane.showMessageDialog(null, "Просмотр товаров");
+                    try {
+                        List<Product> productList = DatabaseHelper.selectProduct();
+                        List<Manufacturer> manufacturers = DatabaseHelper.selectMan();
+
+                        // Создаем новую модель таблицы
+                        DefaultTableModel tableModel = new DefaultTableModel();
+
+                        // Добавляем колонки в модель таблицы
+                        tableModel.addColumn("Картинка");
+                        tableModel.addColumn("Товар");
+                        tableModel.addColumn("Наличие");
+
+                        // Добавляем новые товары в таблицу
+                        for (Product product : productList) {
+                            String productInfo = "<html>"
+                                    + "Название: " + product.getProductName() + "<br/> <br/>"
+                                    + "Описание: " + product.getDescription() + "<br/> <br/>"
+                                    + "Производитель: " + manufacturers.get(product.getManufacturer() - 1).getManName() + "<br/> <br/>"
+                                    + "Цена: " + product.getCost()
+                                    + "</html>";
+
+                            tableModel.addRow(new Object[]{product.getImage(), productInfo, product.getQuantityInStock()});
+                        }
+                        // Создаем JTable с использованием новой модели
+                        JTable table = new JTable(tableModel);
+
+                        table.setRowHeight(180);
+
+                        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
+                        renderer.setVerticalAlignment(SwingConstants.TOP);
+                        table.getColumnModel().getColumn(1).setCellRenderer(renderer);
+
+                        // Добавляем рендерер для первого столбца (изображения)
+                        table.getColumnModel().getColumn(0).setCellRenderer(new ImageRenderer());
+                        table.getColumnModel().getColumn(0).setPreferredWidth(10);
+                        table.getColumnModel().getColumn(2).setPreferredWidth(10);
+                        // Создаем JScrollPane и добавляем в него JTable
+                        JScrollPane scrollPane = new JScrollPane(table);
+
+                        // Создаем новый JFrame и добавляем в него JScrollPane
+                        JFrame productsFrame = new JFrame("Список товаров");
+                        productsFrame.getContentPane().add(scrollPane);
+
+                        // Устанавливаем параметры отображения окна
+                        productsFrame.setSize(600, 600);
+                        productsFrame.setLocationRelativeTo(null);
+                        productsFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);  // Закрываем окно, не завершая приложение
+                        productsFrame.setVisible(true);
+
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(null, "Ошибка при получении товаров: " + ex.getMessage());
+                    }
                 }
             });
 
@@ -73,18 +138,36 @@ public class MainApplicationFrame extends JFrame {
 
         // Добавление кнопки возврата к окну авторизации
         JButton logoutButton = new JButton("Выйти");
-        logoutButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Логика выхода из учетной записи и возвращения к окну авторизации
-                dispose(); // Закрываем текущее окно
-                new LoginFrame(); // Открываем окно авторизации
-            }
-        });
+        logoutButton.addActionListener(new
+
+                                               ActionListener() {
+                                                   @Override
+                                                   public void actionPerformed(ActionEvent e) {
+                                                       // Логика выхода из учетной записи и возвращения к окну авторизации
+                                                       dispose(); // Закрываем текущее окно
+                                                       new LoginFrame(); // Открываем окно авторизации
+                                                   }
+                                               });
+
         add(logoutButton);
 
         setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
+
         setVisible(true);
+
+    }
+
+    static class ImageRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            JLabel label = new JLabel();
+            if (value != null) {
+                ImageIcon imageIcon = new ImageIcon(value.toString());
+                Image image = imageIcon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
+                label.setIcon(new ImageIcon(image));
+            }
+            return label;
+        }
     }
 
     private void addProduct() {
