@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class Category {
     private int id;
     private String categoryName;
@@ -21,5 +23,12 @@ public class Category {
 
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
+    }
+
+    public int findByName(String categoryName) {
+        if (Objects.equals(categoryName, this.categoryName)) {
+            return id;
+        }
+        return -1;
     }
 }

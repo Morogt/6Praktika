@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class Supplier {
     private int id;
     private String supplierName;
@@ -21,5 +23,12 @@ public class Supplier {
 
     public void setSupplierName(String supplierName) {
         this.supplierName = supplierName;
+    }
+
+    public int findByName(String supName) {
+        if (Objects.equals(supName, this.supplierName)) {
+            return id;
+        }
+        return -1;
     }
 }

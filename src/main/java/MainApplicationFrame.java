@@ -4,7 +4,9 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainApplicationFrame extends JFrame {
@@ -171,20 +173,24 @@ public class MainApplicationFrame extends JFrame {
     }
 
     private void addProduct() {
+        List<Manufacturer> manufacturers = DatabaseHelper.selectMan();
+        List<Supplier> suppliers = DatabaseHelper.selectSuppliers();
+        List<Category> categories = DatabaseHelper.selectCategories();
         // Создание формы для ввода данных
         JPanel inputPanel = new JPanel(new GridLayout(12, 2));
         JTextField skuField = new JTextField();
         JTextField productNameField = new JTextField();
-        JTextField unitOfMeasurement = new JTextField();
+        JComboBox<String> unitOfMeasurementComboBox = new JComboBox<>(getUnitOfMeasurementOptions()); // Замените String на ваш тип данных
         JTextField cost = new JTextField();
         JTextField maxDiscountSize = new JTextField();
-        JTextField manufacturer = new JTextField();
-        JTextField supplier = new JTextField();
-        JTextField category = new JTextField();
+        JComboBox<String> manufacturerComboBox = new JComboBox<>(getManufacturerOptions()); // Замените String на ваш тип данных
+        JComboBox<String> supplierComboBox = new JComboBox<>(getSupplierOptions()); // Замените String на ваш тип данных
+        JComboBox<String> categoryComboBox = new JComboBox<>(getCategoryOptions()); // Замените String на ваш тип данных
         JTextField currentDiscount = new JTextField();
         JTextField quantityInStock = new JTextField();
         JTextField description = new JTextField();
         JTextField image = new JTextField();
+        JButton chooseImageButton = new JButton("Выбрать изображение");
 
         // Добавьте другие поля ввода для остальных атрибутов товара
 
@@ -193,41 +199,81 @@ public class MainApplicationFrame extends JFrame {
         inputPanel.add(new JLabel("Название продукта:"));
         inputPanel.add(productNameField);
         inputPanel.add(new JLabel("Единица измерения товара:"));
-        inputPanel.add(unitOfMeasurement);
+        inputPanel.add(unitOfMeasurementComboBox);
         inputPanel.add(new JLabel("Стоимость:"));
         inputPanel.add(cost);
         inputPanel.add(new JLabel("Размер максимально возможной скидки:"));
         inputPanel.add(maxDiscountSize);
         inputPanel.add(new JLabel("Производитель:"));
-        inputPanel.add(manufacturer);
+        inputPanel.add(manufacturerComboBox);
         inputPanel.add(new JLabel("Поставщик:"));
-        inputPanel.add(supplier);
+        inputPanel.add(supplierComboBox);
         inputPanel.add(new JLabel("Категория товара:"));
-        inputPanel.add(category);
+        inputPanel.add(categoryComboBox);
         inputPanel.add(new JLabel("Действующая скидка:"));
         inputPanel.add(currentDiscount);
         inputPanel.add(new JLabel("Количество на складе:"));
         inputPanel.add(quantityInStock);
         inputPanel.add(new JLabel("Описание:"));
         inputPanel.add(description);
-        inputPanel.add(new JLabel("Изображение:"));
-        inputPanel.add(image);
+        inputPanel.add(new JLabel("Выбор изображения:"));
+        inputPanel.add(chooseImageButton);
 
+        // Добавление слушателя для кнопки выбора изображения
+        chooseImageButton.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            int result = fileChooser.showOpenDialog(null);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                image.setText(selectedFile.getAbsolutePath());
+            }
+        });
 
         int result = JOptionPane.showConfirmDialog(null, inputPanel, "Enter Product Information",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
+            int manId = 0;
+            int supId = 0;
+            int catId = 0;
+            for (Manufacturer manufacturer : manufacturers) {
+                int count = manufacturer.findByName(manufacturerComboBox.getSelectedItem().toString());
+                if (count != -1) {
+                    manId = count;
+                    break;
+                }
+            }
+            for (Supplier supplier : suppliers) {
+                int count = supplier.findByName(supplierComboBox.getSelectedItem().toString());
+                if (count != -1) {
+                    supId = count;
+                    break;
+                }
+            }for (Category category : categories) {
+                int count = category.findByName(categoryComboBox.getSelectedItem().toString());
+                if (count != -1) {
+                    catId = count;
+                    break;
+                }
+            }
+
+
+            System.out.println(catId);
+            System.out.println(manId);
+            System.out.println(supId);
             // Создайте объект Product с введенными данными
+
+
+
             Product newProduct = new Product(
                     skuField.getText(),
                     productNameField.getText(),
-                    Integer.parseInt(unitOfMeasurement.getText()),
+                    1,
                     BigDecimal.valueOf(Double.parseDouble(cost.getText())),
                     BigDecimal.valueOf(Double.parseDouble(maxDiscountSize.getText())),
-                    Integer.parseInt(manufacturer.getText()),
-                    Integer.parseInt(supplier.getText()),
-                    Integer.parseInt(category.getText()),
+                    manId,
+                    supId,
+                    catId,
                     BigDecimal.valueOf(Double.parseDouble(currentDiscount.getText())),
                     Integer.parseInt(quantityInStock.getText()),
                     description.getText(),
@@ -241,5 +287,48 @@ public class MainApplicationFrame extends JFrame {
                 JOptionPane.showMessageDialog(null, "Ошибка добавления продукта.");
             }
         }
+    }
+
+    private String[] getUnitOfMeasurementOptions() {
+        return new String[]{"Рулон"};
+    }
+
+    private String[] getManufacturerOptions() {
+        List<Manufacturer> manufacturers = DatabaseHelper.selectMan();
+
+        String[] opt = new String[manufacturers.size()];
+        int i = 0;
+        for (Manufacturer manufacturer: manufacturers) {
+            opt[i] = manufacturer.getManName();
+            i++;
+        }
+        // Реализуйте логику получения опций для производителя
+        return opt;
+    }
+
+    private String[] getSupplierOptions() {
+        List<Supplier> suppliers = DatabaseHelper.selectSuppliers();
+
+        String[] opt = new String[suppliers.size()];
+        int i = 0;
+        for (Supplier supplier: suppliers) {
+            opt[i] = supplier.getSupplierName();
+            i++;
+        }
+        // Реализуйте логику получения опций для производителя
+        return opt;
+    }
+
+    private String[] getCategoryOptions() {
+        List<Category> categories = DatabaseHelper.selectCategories();
+
+        String[] opt = new String[categories.size()];
+        int i = 0;
+        for (Category category: categories) {
+            opt[i] = category.getCategoryName();
+            i++;
+        }
+        // Реализуйте логику получения опций для производителя
+        return opt;
     }
 }

@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class Manufacturer {
     private int id;
     private String manName;
@@ -21,5 +23,12 @@ public class Manufacturer {
 
     public void setManName(String manName) {
         this.manName = manName;
+    }
+
+    public int findByName(String manName) {
+        if (Objects.equals(manName, this.manName)) {
+            return id;
+        }
+        return -1;
     }
 }
